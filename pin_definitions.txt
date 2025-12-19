@@ -27,11 +27,11 @@
 // BUTTON BOX PINS (PCF8574 #1)
 // ═══════════════════════════════════════════════════════════════
 #define BTN_YELLOW 1
-#define BTN_BLUE 2
-#define BTN_GREEN 3
+#define BTN_BLUE 3
+#define BTN_GREEN 2
 #define LED_RED 4
-#define LED_YELLOW 5
-#define LED_BLUE 6
+#define LED_YELLOW 6
+#define LED_BLUE 5
 #define LED_GREEN 7
 
 // ═══════════════════════════════════════════════════════════════
@@ -45,5 +45,6 @@
 #define RELAY_GYRE 5
 #define RELAY_ATO_PUMP 6
 #define RELAY_SPARE 7
+
 
 #endif
