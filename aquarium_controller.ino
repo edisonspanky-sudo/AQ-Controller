@@ -10,6 +10,10 @@
 #include <DallasTemperature.h>
 #include <RTClib.h>
 #include <IRremote.hpp>
+#include <WiFi.h>
+
+const char* WIFI_SSID = "Marian's G-Fiber";
+const char* WIFI_PASS = "8012507321";
 
 // Include all module headers
 #include "config.h"
@@ -256,6 +260,41 @@ void setup() {
   Serial.println("║   Modular Version                     ║");
   Serial.println("╚═══════════════════════════════════════╝\n");
   
+  WiFi.mode(WIFI_STA);
+WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+Serial.print("Connecting to WiFi");
+unsigned long start = millis();
+while (WiFi.status() != WL_CONNECTED && millis() - start < 8000) {
+  delay(500);
+  Serial.print(".");
+}
+Serial.println();
+
+if (WiFi.status() == WL_CONNECTED) {
+  Serial.println("✓ WiFi connected");
+} else {
+  Serial.println("⚠️ WiFi failed, continuing offline");
+}
+
+#include <time.h>
+
+static const char* TZ = "MST7MDT,M3.2.0/2,M11.1.0/2"; // Utah, auto DST
+
+void syncTimeFromNTP() {
+  configTzTime(TZ, "pool.ntp.org", "time.nist.gov");
+
+  struct tm t;
+  if (getLocalTime(&t, 5000)) {
+    rtc.adjust(DateTime(
+      t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+      t.tm_hour, t.tm_min, t.tm_sec
+    ));
+    Serial.println("🕒 Time synced from NTP");
+  } else {
+    Serial.println("⚠️ NTP failed");
+  }
+}
   // Initialize I2C
   Wire.begin(21, 22);
   Serial.println("→ Initializing I2C bus...");
