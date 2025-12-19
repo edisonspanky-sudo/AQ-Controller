@@ -57,7 +57,7 @@ void startCloud();
 void startCloudBrighten();
 void updateCloudBrighten();
 void triggerManualCloud();
-void setInitialLightingFromTime()
+void setInitialLightingFromTime();
 
 // ═══════════════════════════════════════════════════════════════
 // IR FUNCTIONS
@@ -166,48 +166,49 @@ void setInitialLightingFromTime() {
 
 
 void handleLightingSchedule() {
-static int lastDay = -1;
-static bool sunriseStartedToday = false;
-static bool sunsetStartedToday  = false;
-
-DateTime now = rtc.now();
-if (now.day() != lastDay) {
-  lastDay = now.day();
-  sunriseStartedToday = false;
-  sunsetStartedToday = false;
-}
-
   if (!scheduledLightsEnabled) return;
-  
+
+  // Reset "started today" flags at day rollover
+  static int lastDay = -1;
+  static bool sunriseStartedToday = false;
+  static bool sunsetStartedToday  = false;
+
   DateTime now = rtc.now();
-  int nowMinutes = now.hour() * 60 + now.minute();
-  int sunriseStart = SUNRISE_START_HOUR * 60 + SUNRISE_START_MINUTE;
-  int sunriseEnd = SUNRISE_END_HOUR * 60 + SUNRISE_END_MINUTE;
-  int sunsetStart = SUNSET_START_HOUR * 60 + SUNSET_START_MINUTE;
-  int sunsetEnd = SUNSET_END_HOUR * 60 + SUNSET_END_MINUTE;
-  
+
+  if (now.day() != lastDay) {
+    lastDay = now.day();
+    sunriseStartedToday = false;
+    sunsetStartedToday  = false;
+  }
+
+  int nowMinutes   = now.hour() * 60 + now.minute();
+  int sunriseStart  = SUNRISE_START_HOUR * 60 + SUNRISE_START_MINUTE;
+  int sunriseEnd    = SUNRISE_END_HOUR * 60 + SUNRISE_END_MINUTE;
+  int sunsetStart   = SUNSET_START_HOUR * 60 + SUNSET_START_MINUTE;
+  int sunsetEnd     = SUNSET_END_HOUR * 60 + SUNSET_END_MINUTE;
+
   switch (currentLightMode) {
     case NIGHT_MODE:
-    if (!sunriseStartedToday && nowMinutes >= sunriseStart) {
-       sunriseStartedToday = true;
-       startSunrise();
+      if (!sunriseStartedToday && nowMinutes >= sunriseStart) {
+        sunriseStartedToday = true;
+        startSunrise();
       }
       break;
-      
+
     case SUNRISE_RAMPING:
       updateSunrise();
       if (nowMinutes >= sunriseEnd) {
         completeSunrise();
       }
       break;
-      
+
     case FULL_DAYLIGHT:
       if (!sunsetStartedToday && nowMinutes >= sunsetStart) {
         sunsetStartedToday = true;
         startSunset();
       }
       break;
-      
+
     case SUNSET_RAMPING:
       updateSunset();
       if (nowMinutes >= sunsetEnd) {
@@ -216,6 +217,7 @@ if (now.day() != lastDay) {
       break;
   }
 }
+
 
 void startSunrise() {
   Serial.println("\n🌅 SUNRISE STARTING (30 min ramp)");
@@ -368,5 +370,6 @@ void triggerManualCloud() {
     startCloud();
   }
 }
+
 
 #endif
