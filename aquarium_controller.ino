@@ -261,21 +261,21 @@ void setup() {
   Serial.println("╚═══════════════════════════════════════╝\n");
   
   WiFi.mode(WIFI_STA);
-WiFi.begin(WIFI_SSID, WIFI_PASS);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
 
-Serial.print("Connecting to WiFi");
-unsigned long start = millis();
-while (WiFi.status() != WL_CONNECTED && millis() - start < 8000) {
+  Serial.print("Connecting to WiFi");
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 8000) {
   delay(500);
   Serial.print(".");
-}
-Serial.println();
+  }
+  Serial.println();
 
-if (WiFi.status() == WL_CONNECTED) {
-  Serial.println("✓ WiFi connected");
-} else {
-  Serial.println("⚠️ WiFi failed, continuing offline");
-}
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("✓ WiFi connected");
+  } else {
+    Serial.println("⚠️ WiFi failed, continuing offline");
+  }
 
 #include <time.h>
 
@@ -295,6 +295,10 @@ void syncTimeFromNTP() {
     Serial.println("⚠️ NTP failed");
   }
 }
+  static bool booted = false;
+if (booted) return;
+booted = true;
+
   // Initialize I2C
   Wire.begin(21, 22);
   Serial.println("→ Initializing I2C bus...");
@@ -403,6 +407,13 @@ for (int i = 0; i < 8; i++) {
 
   // Initialize cloud timing
   nextCloudTime = millis() + random(CLOUD_MIN_INTERVAL, CLOUD_MAX_INTERVAL);
+  
+  Serial.println("\n=== SYSTEM CONFIG ===");
+Serial.printf("Gyre wired NC: %s\n", CFG_GYRE_WIRED_NC ? "YES" : "NO");
+Serial.printf("ATO floats active-low: %s\n", CFG_ATO_FLOAT_ACTIVE_LOW ? "YES" : "NO");
+Serial.printf("Schedule enabled: %s\n", scheduledLightsEnabled ? "YES" : "NO");
+Serial.println("=====================\n");
+
   
   Serial.println("\n╔═══════════════════════════════════════╗");
   Serial.println("║   INITIALIZATION COMPLETE             ║");
