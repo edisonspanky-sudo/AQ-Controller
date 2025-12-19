@@ -250,6 +250,23 @@ void togglePhotoMode() {
 // ═══════════════════════════════════════════════════════════════
 // SETUP
 // ═══════════════════════════════════════════════════════════════
+void syncTimeFromNTP() {
+  configTzTime(TZ, "pool.ntp.org", "time.nist.gov");
+
+  struct tm t;
+  if (getLocalTime(&t, 5000)) {
+    rtc.adjust(DateTime(
+      t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+      t.tm_hour, t.tm_min, t.tm_sec
+    ));
+    Serial.println("🕒 Time synced from NTP");
+  } else {
+    Serial.println("⚠️ NTP failed");
+  }
+}
+  static bool booted = false;
+  if (booted) return;
+  booted = true;
 
 void setup() {
   Serial.begin(115200);
@@ -280,24 +297,6 @@ void setup() {
 #include <time.h>
 
 static const char* TZ = "MST7MDT,M3.2.0/2,M11.1.0/2"; // Utah, auto DST
-
-void syncTimeFromNTP() {
-  configTzTime(TZ, "pool.ntp.org", "time.nist.gov");
-
-  struct tm t;
-  if (getLocalTime(&t, 5000)) {
-    rtc.adjust(DateTime(
-      t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-      t.tm_hour, t.tm_min, t.tm_sec
-    ));
-    Serial.println("🕒 Time synced from NTP");
-  } else {
-    Serial.println("⚠️ NTP failed");
-  }
-}
-  static bool booted = false;
-if (booted) return;
-booted = true;
 
   // Initialize I2C
   Wire.begin(21, 22);
@@ -393,7 +392,7 @@ for (int i = 0; i < 8; i++) {
   
   // Set initial light mode
   Serial.println("\n→ Setting initial light mode...");
-  setInitialLightingFromTime()
+  setInitialLightingFromTime();
   
   // RUN defaults after boot (so we don't come up "all off")
   emergencyStop = false;
