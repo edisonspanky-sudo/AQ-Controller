@@ -31,32 +31,54 @@ extern unsigned long feedModeStartTime;
 // ═══════════════════════════════════════════════════════════════
 
 void updateLEDs() {
-  static unsigned long lastBlink = 0;
+  // Blinker state (persists across calls)
+  static uint32_t lastBlink = 0;
   static bool blinkState = false;
-  
-  // Red LED - blinks during E-stop
+
+  // Default OFF
+  buttonBox.digitalWrite(LED_RED, LOW);
+  buttonBox.digitalWrite(LED_YELLOW, LOW);
+  buttonBox.digitalWrite(LED_BLUE, LOW);
+  buttonBox.digitalWrite(LED_GREEN, LOW);
+
+  // Highest priority: E-stop
   if (emergencyStop) {
-    if (millis() - lastBlink > 500) {
+    // Blink red during E-stop
+    uint32_t now = millis();
+    if (now - lastBlink >= 500) {
+      lastBlink = now;
       blinkState = !blinkState;
-      buttonBox.digitalWrite(LED_RED, blinkState ? HIGH : LOW);
-      lastBlink = millis();
-      
-      if (blinkState && !alarmSilenced) {
-        tone(BUZZER_PIN, 2000, 100);
-      }
     }
-  } else {
-    buttonBox.digitalWrite(LED_RED, LOW);
+    buttonBox.digitalWrite(LED_RED, blinkState ? HIGH : LOW);
+
+    // Optional: quiet “tick” beep when not silenced (comment out if annoying)
+    // if (blinkState && !alarmSilenced) tone(BUZZER_PIN, 2000, 30);
+
+    return;
   }
-  
-  // Yellow LED - on during feed mode
-  buttonBox.digitalWrite(LED_YELLOW, feedModeActive ? HIGH : LOW);
-  
-  // Blue LED - on when alarm active
-  buttonBox.digitalWrite(LED_BLUE, (alarmSilenced || atoTimeoutAlarm || atoReservoirAlarm) ? HIGH : LOW);
-  
-  // Green LED - on during photo mode
-  buttonBox.digitalWrite(LED_GREEN, photoModeActive ? HIGH : LOW);
+
+  // Alarm/fault indicators (ATO faults for now)
+  bool atoFault = (atoTimeoutAlarm || atoReservoirAlarm);
+
+  // Blue = ACK/silenced OR “attention needed”
+  if (atoFault && alarmSilenced) {
+    buttonBox.digitalWrite(LED_BLUE, HIGH);
+  }
+
+  // Red = fault active and not silenced
+  if (atoFault && !alarmSilenced) {
+    buttonBox.digitalWrite(LED_RED, HIGH);
+  }
+
+  // Yellow = feed mode
+  if (feedModeActive) {
+    buttonBox.digitalWrite(LED_YELLOW, HIGH);
+  }
+
+  // Green = normal operation (no E-stop, no ATO faults)
+  if (!atoFault) {
+    buttonBox.digitalWrite(LED_GREEN, HIGH);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -191,5 +213,6 @@ void printStatus() {
   
   Serial.println("╚═══════════════════════════════════════╝\n");
 }
+
 
 #endif
