@@ -1,0 +1,195 @@
+#ifndef DISPLAY_H
+#define DISPLAY_H
+
+#include <PCF8574.h>
+#include <RTClib.h>
+#include "config.h"
+#include "pin_definitions.h"
+
+// External references
+extern PCF8574 buttonBox;
+extern RTC_DS3231 rtc;
+extern float tempSump;
+extern float tempDisplay;
+extern bool heaterPrimaryOn;
+extern bool emergencyStop;
+extern bool feedModeActive;
+extern bool photoModeActive;
+extern bool alarmSilenced;
+extern bool atoRunning;
+extern bool atoTimeoutAlarm;
+extern bool atoReservoirAlarm;
+extern unsigned long atoStartTime;
+extern LightMode currentLightMode;
+extern CloudState cloudState;
+extern bool scheduledLightsEnabled;
+extern int currentRampStep;
+extern unsigned long feedModeStartTime;
+
+// ═══════════════════════════════════════════════════════════════
+// LED CONTROL
+// ═══════════════════════════════════════════════════════════════
+
+void updateLEDs() {
+  static unsigned long lastBlink = 0;
+  static bool blinkState = false;
+  
+  // Red LED - blinks during E-stop
+  if (emergencyStop) {
+    if (millis() - lastBlink > 500) {
+      blinkState = !blinkState;
+      buttonBox.digitalWrite(LED_RED, blinkState ? HIGH : LOW);
+      lastBlink = millis();
+      
+      if (blinkState && !alarmSilenced) {
+        tone(BUZZER_PIN, 2000, 100);
+      }
+    }
+  } else {
+    buttonBox.digitalWrite(LED_RED, LOW);
+  }
+  
+  // Yellow LED - on during feed mode
+  buttonBox.digitalWrite(LED_YELLOW, feedModeActive ? HIGH : LOW);
+  
+  // Blue LED - on when alarm active
+  buttonBox.digitalWrite(LED_BLUE, (alarmSilenced || atoTimeoutAlarm || atoReservoirAlarm) ? HIGH : LOW);
+  
+  // Green LED - on during photo mode
+  buttonBox.digitalWrite(LED_GREEN, photoModeActive ? HIGH : LOW);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATUS DISPLAY
+// ═══════════════════════════════════════════════════════════════
+
+void printStatus() {
+  static unsigned long lastPrint = 0;
+  
+  if (millis() - lastPrint < 5000) return;
+  lastPrint = millis();
+  
+  Serial.println("\n╔═══════════════════════════════════════╗");
+  Serial.println("║      AQUARIUM CONTROLLER STATUS       ║");
+  Serial.println("╠═══════════════════════════════════════╣");
+  
+  DateTime now = rtc.now();
+  Serial.print("║ Time: ");
+  if (now.hour() < 10) Serial.print("0");
+  Serial.print(now.hour());
+  Serial.print(":");
+  if (now.minute() < 10) Serial.print("0");
+  Serial.print(now.minute());
+  Serial.print(":");
+  if (now.second() < 10) Serial.print("0");
+  Serial.print(now.second());
+  Serial.println("                            ║");
+  
+  Serial.println("╠═══════════════════════════════════════╣");
+  
+  Serial.print("║ Sump Temp:     ");
+  Serial.print(tempSump, 1);
+  Serial.print("°F");
+  if (tempSump < 10) Serial.print("  ");
+  else if (tempSump < 100) Serial.print(" ");
+  Serial.println("                ║");
+  
+  Serial.print("║ Display Temp:  ");
+  Serial.print(tempDisplay, 1);
+  Serial.print("°F");
+  if (tempDisplay < 10) Serial.print("  ");
+  else if (tempDisplay < 100) Serial.print(" ");
+  Serial.println("                ║");
+  
+  Serial.print("║ Target:        ");
+  Serial.print(TARGET_TEMP, 1);
+  Serial.println("°F                 ║");
+  
+  Serial.print("║ Primary Heater: ");
+  Serial.print(heaterPrimaryOn ? "ON " : "OFF");
+  Serial.println("                   ║");
+  
+  Serial.println("╠═══════════════════════════════════════╣");
+  
+  Serial.print("║ Light Mode:    ");
+  switch(currentLightMode) {
+    case NIGHT_MODE:
+      Serial.print("NIGHT MODE");
+      break;
+    case SUNRISE_RAMPING:
+      Serial.print("SUNRISE (");
+      Serial.print((currentRampStep * 100) / RAMP_STEPS);
+      Serial.print("%)");
+      break;
+    case FULL_DAYLIGHT:
+      Serial.print("DAYLIGHT");
+      break;
+    case SUNSET_RAMPING:
+      Serial.print("SUNSET (");
+      Serial.print((currentRampStep * 100) / RAMP_STEPS);
+      Serial.print("%)");
+      break;
+  }
+  Serial.println("           ║");
+  
+  if (cloudState != NO_CLOUD) {
+    Serial.print("║ Cloud:         ");
+    switch(cloudState) {
+      case CLOUD_DIMMING:
+        Serial.print("DIMMING");
+        break;
+      case CLOUD_HOLDING:
+        Serial.print("PASSING");
+        break;
+      case CLOUD_BRIGHTENING:
+        Serial.print("BRIGHTENING");
+        break;
+    }
+    Serial.println("             ║");
+  }
+  
+  Serial.print("║ Schedule:      ");
+  Serial.print(scheduledLightsEnabled ? "ENABLED" : "DISABLED");
+  Serial.println("              ║");
+  
+  Serial.println("╠═══════════════════════════════════════╣");
+  
+  Serial.print("║ ATO Status:    ");
+  if (atoReservoirAlarm) {
+    Serial.println("RESERVOIR EMPTY        ║");
+  } else if (atoTimeoutAlarm) {
+    Serial.println("TIMEOUT ALARM          ║");
+  } else if (atoRunning) {
+    Serial.print("RUNNING (");
+    int runtime = (millis() - atoStartTime) / 1000;
+    if (runtime < 10) Serial.print(" ");
+    Serial.print(runtime);
+    Serial.println(" sec)       ║");
+  } else {
+    Serial.println("STANDBY                ║");
+  }
+  
+  Serial.println("╠═══════════════════════════════════════╣");
+  
+  if (emergencyStop) {
+    Serial.println("║ 🔴 E-STOP ACTIVE                      ║");
+  }
+  if (feedModeActive) {
+    int remaining = (FEED_MODE_DURATION - (millis() - feedModeStartTime)) / 1000;
+    Serial.print("║ 🐟 FEED MODE (");
+    if (remaining < 100) Serial.print(" ");
+    if (remaining < 10) Serial.print(" ");
+    Serial.print(remaining);
+    Serial.println(" sec left)         ║");
+  }
+  if (photoModeActive) {
+    Serial.println("║ 📸 PHOTO MODE ACTIVE                  ║");
+  }
+  if (alarmSilenced) {
+    Serial.println("║ 🔇 ALARM SILENCED                     ║");
+  }
+  
+  Serial.println("╚═══════════════════════════════════════╝\n");
+}
+
+#endif

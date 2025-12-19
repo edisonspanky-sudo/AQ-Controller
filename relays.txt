@@ -1,0 +1,28 @@
+#ifndef RELAYS_H
+#define RELAYS_H
+
+#include <PCF8574.h>
+#include "pin_definitions.h"
+
+// External references
+extern PCF8574 relayBox;
+extern uint8_t relayStates;
+
+// ═══════════════════════════════════════════════════════════════
+// RELAY CONTROL
+// ═══════════════════════════════════════════════════════════════
+
+void setRelay(uint8_t relay, bool state) {
+  if (state) {
+    relayStates &= ~(1 << relay);  // Active-LOW: clear bit = ON
+  } else {
+    relayStates |= (1 << relay);   // Active-LOW: set bit = OFF
+  }
+  
+  // Write each pin individually (PCF8574 library compatibility)
+  for (int i = 0; i < 8; i++) {
+    relayBox.digitalWrite(i, (relayStates >> i) & 0x01);
+  }
+}
+
+#endif

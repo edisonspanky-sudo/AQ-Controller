@@ -1,0 +1,49 @@
+#ifndef PIN_DEFINITIONS_H
+#define PIN_DEFINITIONS_H
+
+// ═══════════════════════════════════════════════════════════════
+// ESP32 DIRECT GPIO PINS
+// ═══════════════════════════════════════════════════════════════
+#define TEMP_SUMP_PIN 25
+#define TEMP_DISPLAY_PIN 26
+#define PH_PROBE_PIN 36
+#define IR_RECV_PIN 15
+#define IR_SEND_PIN 4
+#define BUZZER_PIN 5
+#define ATO_FLOAT_LOW 18
+#define ATO_FLOAT_HIGH 19
+#define ATO_RESERVOIR_EMPTY 13
+#define ESTOP_BUTTON_PIN 32
+
+// I2C pins: SDA=21, SCL=22 (default)
+
+// ═══════════════════════════════════════════════════════════════
+// PCF8574 I2C ADDRESSES
+// ═══════════════════════════════════════════════════════════════
+#define BUTTON_BOX_ADDR 0x20
+#define RELAY_BOX_ADDR 0x21
+
+// ═══════════════════════════════════════════════════════════════
+// BUTTON BOX PINS (PCF8574 #1)
+// ═══════════════════════════════════════════════════════════════
+#define BTN_YELLOW 1
+#define BTN_BLUE 2
+#define BTN_GREEN 3
+#define LED_RED 4
+#define LED_YELLOW 5
+#define LED_BLUE 6
+#define LED_GREEN 7
+
+// ═══════════════════════════════════════════════════════════════
+// RELAY BOX PINS (PCF8574 #2)
+// ═══════════════════════════════════════════════════════════════
+#define RELAY_HEATER_PRIMARY 0
+#define RELAY_HEATER_BACKUP 1
+#define RELAY_LIGHT_DISPLAY 2
+#define RELAY_LIGHT_SUMP 3
+#define RELAY_RETURN_PUMP 4
+#define RELAY_GYRE 5
+#define RELAY_ATO_PUMP 6
+#define RELAY_SPARE 7
+
+#endif
