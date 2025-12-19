@@ -15,6 +15,9 @@
 const char* WIFI_SSID = "Marian's G-Fiber";
 const char* WIFI_PASS = "8012507321";
 
+#include <time.h>
+static const char* TZ = "MST7MDT,M3.2.0/2,M11.1.0/2"; // America/Denver with DST
+
 // Include all module headers
 #include "config.h"
 #include "pin_definitions.h"
@@ -264,11 +267,11 @@ void syncTimeFromNTP() {
     Serial.println("⚠️ NTP failed");
   }
 }
+
+void setup() {
   static bool booted = false;
   if (booted) return;
   booted = true;
-
-void setup() {
   Serial.begin(115200);
   delay(1000);
   
