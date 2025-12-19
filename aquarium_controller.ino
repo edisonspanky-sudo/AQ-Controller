@@ -17,6 +17,7 @@ const char* WIFI_PASS = "8012507321";
 
 #include <time.h>
 static const char* TZ = "MST7MDT,M3.2.0/2,M11.1.0/2"; // America/Denver with DST
+unsigned long bootTime = 0;
 
 // Include all module headers
 #include "config.h"
@@ -279,6 +280,7 @@ void setup() {
   Serial.println("║   AQUARIUM CONTROLLER v3.0            ║");
   Serial.println("║   Modular Version                     ║");
   Serial.println("╚═══════════════════════════════════════╝\n");
+  bootTime = millis();
   
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -328,6 +330,14 @@ static const char* TZ = "MST7MDT,M3.2.0/2,M11.1.0/2"; // Utah, auto DST
   }
   Serial.print("  Total devices found: ");
   Serial.println(deviceCount);
+  // Clear all transient modes on boot
+  feedModeActive = false;
+  photoModeActive = false;
+  alarmSilenced = false;
+  manualEstopLatched = false;
+  emergencyStop = false;
+  setRelay(RELAY_RETURN_PUMP, true);
+  setGyreRunning(true);
   
   // Initialize buttons
   btnYellow.begin();
@@ -447,6 +457,8 @@ void loop() {
     readTemperatures();
     checkTemperatureDifferential();
     checkEmergencyShutoff();
+    // Ignore emergency faults for first 30 seconds after boot
+      if (millis() - bootTime < 30000) return;
     controlHeaters();
     handleFeedMode();
     handleATO();
